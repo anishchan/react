@@ -152,14 +152,22 @@ export default class Overlay {
   container: HTMLElement;
   tip: OverlayTip;
   rects: Array<OverlayRect>;
+  nodes: Array<HTMLElement>;
+  componentName: String;
 
-  constructor() {
+  constructor(nodes: Array<HTMLElement>, name?: ?string) {
     // Find the root window, because overlays are positioned relative to it.
-    const currentWindow = window.__REACT_DEVTOOLS_TARGET_WINDOW__ || window;
+    this.nodes = nodes;
+    this.componentName = name;
+
+    const document = this.nodes[0]?.ownerDocument;
+    const ownerWindow = document?.defaultView;
+
+    const currentWindow = ownerWindow || window.__REACT_DEVTOOLS_TARGET_WINDOW__ || window;
     this.window = currentWindow;
 
     // When opened in shells/dev, the tooltip should be bound by the app iframe, not by the topmost window.
-    const tipBoundsWindow = window.__REACT_DEVTOOLS_TARGET_WINDOW__ || window;
+    const tipBoundsWindow = ownerWindow || window.__REACT_DEVTOOLS_TARGET_WINDOW__ || window;
     this.tipBoundsWindow = tipBoundsWindow;
 
     const doc = currentWindow.document;
@@ -183,10 +191,10 @@ export default class Overlay {
     }
   }
 
-  inspect(nodes: Array<HTMLElement>, name?: ?string) {
+  inspect() {
     // We can't get the size of text nodes or comment nodes. React as of v15
     // heavily uses comment nodes to delimit text.
-    const elements = nodes.filter(node => node.nodeType === Node.ELEMENT_NODE);
+    const elements = this.nodes.filter(node => node.nodeType === Node.ELEMENT_NODE);
 
     while (this.rects.length > elements.length) {
       const rect = this.rects.pop();
@@ -225,8 +233,8 @@ export default class Overlay {
       rect.update(box, dims);
     });
 
-    if (!name) {
-      name = elements[0].nodeName.toLowerCase();
+    if (!this.componentName) {
+      this.componentName = elements[0].nodeName.toLowerCase();
 
       const node = elements[0];
       const hook: DevToolsHook =
@@ -243,13 +251,13 @@ export default class Overlay {
         }
 
         if (ownerName) {
-          name += ' (in ' + ownerName + ')';
+          this.componentName += ' (in ' + ownerName + ')';
         }
       }
     }
 
     this.tip.updateText(
-      name,
+      this.componentName,
       outerBox.right - outerBox.left,
       outerBox.bottom - outerBox.top,
     );
