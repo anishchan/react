@@ -42,10 +42,10 @@ export function showOverlay(
   }
 
   if (overlay === null) {
-    overlay = new Overlay();
+    overlay = new Overlay(elements, componentName);
   }
 
-  overlay.inspect(elements, componentName);
+  overlay.inspect();
 
   if (hideAfterTimeout) {
     timeoutID = setTimeout(hideOverlay, SHOW_DURATION);
